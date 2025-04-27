@@ -1,12 +1,17 @@
-
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
-import { DrawingBoard, } from './screens/drawingBoard';
+import { DrawingBoard } from './screens/drawingBoard';
 
 function App() {
   return (
-    <div>
-      <DrawingBoard selectedColor={'black'} lineThickness={10} currentShape={'pencil'} isEraser={false} />
-    </div>
+    <Router>
+      <div className="app">
+        <Routes>
+          <Route path="/" element={<DrawingBoard />} />
+          <Route path="/room/:id" element={<DrawingBoard />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

@@ -22,3 +22,19 @@ interface CanvasProps {
   currentShape: Shape;
   isEraser: boolean;
 }
+
+interface DrawingData {
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
+  color: string;
+  lineWidth: number;
+  shape: Shape;
+  roomId: string;
+}
+
+interface Point {
+  x: number;
+  y: number;
+}

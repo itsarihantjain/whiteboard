@@ -37,12 +37,42 @@
 }
 
 .canvas-wrapper {
+  position: relative;
   width: 100%;
-  padding: 16px;
+  height: 100%;
+}
+
+canvas {
+  border: 1px solid #ccc;
   background-color: white;
-  border: 1px solid black;
-  box-sizing: border-box;
-  border-radius: 8px;
+}
+
+.reset-button {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  padding: 10px 20px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}
+
+.reset-button:hover {
+  background-color: #ff0000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.reset-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 input[type="color"] {

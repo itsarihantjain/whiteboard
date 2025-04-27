@@ -4,7 +4,11 @@ import { Canvas } from '../component/canvas';
 import { Toolbar } from '../component/toolbar';
 import { SocketManager } from '../component/socket-manager';
 
-export const DrawingBoard = ({ height = 500 }: CanvasProps) => {
+interface DrawingBoardProps {
+    height?: number;
+}
+
+export const DrawingBoard = ({ height = 500 }: DrawingBoardProps) => {
     const [selectedColor, setSelectedColor] = useState(COLORS.black);
     const [lineThickness, setLineThickness] = useState(5);
     const [currentShape, setCurrentShape] = useState<Shape>('pencil');
