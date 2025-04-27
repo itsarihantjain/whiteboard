@@ -9,8 +9,6 @@ const socket = io('http://localhost:3001', {
     reconnectionDelay: 1000
 });
 
-
-
 export const Canvas = ({ height, selectedColor, lineThickness, currentShape, isEraser }: CanvasProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
@@ -60,15 +58,15 @@ export const Canvas = ({ height, selectedColor, lineThickness, currentShape, isE
                     startY: lastEmittedPoint.y,
                     currentX: point.x,
                     currentY: point.y,
-                    color: selectedColor,
+                    color: isEraser ? 'eraser' : selectedColor,
                     lineWidth: lineThickness,
-                    shape: currentShape,
+                    shape: isEraser ? 'eraser' : currentShape,
                     roomId
                 });
             });
             setPointBuffer([]);
         }
-    }, [pointBuffer, lastEmittedPoint, selectedColor, lineThickness, currentShape, emitDrawing]);
+    }, [pointBuffer, lastEmittedPoint, selectedColor, lineThickness, currentShape, emitDrawing, isEraser]);
 
     const clearCanvas = useCallback(() => {
         if (canvasRef.current) {
@@ -107,8 +105,6 @@ export const Canvas = ({ height, selectedColor, lineThickness, currentShape, isE
         return () => window.removeEventListener('resize', adjustCanvasSize);
     }, [height, selectedColor, lineThickness]);
 
-
-
     useEffect(() => {
         const handleClearCanvas = (data: { roomId: string }) => {
             const currentRoomId = window.location.pathname.split('/').pop() || 'default';
@@ -129,14 +125,23 @@ export const Canvas = ({ height, selectedColor, lineThickness, currentShape, isE
         socket.emit('clear-canvas', { roomId });
     }, [clearCanvas]);
 
-
     useEffect(() => {
         socket.on('drawing', (data: DrawingData) => {
-            const { startX, startY, currentX, currentY, color, lineWidth } = data;
+            const { startX, startY, currentX, currentY, color, lineWidth, shape } = data;
 
             if (canvasRef.current) {
                 const context = canvasRef.current.getContext('2d');
                 if (context) {
+                    if (shape === 'eraser' || color === 'eraser') {
+                        context.globalCompositeOperation = 'destination-out';
+                        context.beginPath();
+                        context.arc(currentX, currentY, lineWidth / 2, 0, Math.PI * 2);
+                        context.fill();
+                        context.globalCompositeOperation = 'source-over';
+                        return;
+                    }
+
+                    context.globalCompositeOperation = 'source-over';
                     context.strokeStyle = color;
                     context.lineWidth = lineWidth;
                     context.lineJoin = 'round';
@@ -154,9 +159,6 @@ export const Canvas = ({ height, selectedColor, lineThickness, currentShape, isE
             socket.off('drawing');
         };
     }, []);
-
-
-
 
     const initiateDrawing = (e: MouseEvent<HTMLCanvasElement>) => {
         if (!canvasRef.current) return;
@@ -176,9 +178,14 @@ export const Canvas = ({ height, selectedColor, lineThickness, currentShape, isE
             setSnapshotImage(imageData);
         }
 
-        if (context && currentShape === 'pencil' && !isEraser) {
-            context.beginPath();
-            context.moveTo(x, y);
+        if (context) {
+            if (isEraser) {
+                context.globalCompositeOperation = 'destination-out';
+            } else if (currentShape === 'pencil') {
+                context.globalCompositeOperation = 'source-over';
+                context.beginPath();
+                context.moveTo(x, y);
+            }
         }
 
         setIsDrawing(true);
@@ -197,7 +204,38 @@ export const Canvas = ({ height, selectedColor, lineThickness, currentShape, isE
         const currentPoint = { x: currentX, y: currentY };
 
         if (isEraser) {
-            context.clearRect(currentX - lineThickness / 2, currentY - lineThickness / 2, lineThickness, lineThickness);
+            context.beginPath();
+            context.arc(currentX, currentY, lineThickness / 2, 0, Math.PI * 2);
+            context.fill();
+
+            if (lastEmittedPoint) {
+                const distance = Math.sqrt(
+                    Math.pow(currentX - lastEmittedPoint.x, 2) +
+                    Math.pow(currentY - lastEmittedPoint.y, 2)
+                );
+
+                const timeSinceLastDraw = currentTime - lastDrawTime;
+
+                if (distance > 1 || timeSinceLastDraw > 16) {
+                    setPointBuffer(prev => [...prev, currentPoint]);
+
+                    if (pointBuffer.length >= 3 || timeSinceLastDraw > 32) {
+                        const roomId = window.location.pathname.split('/').pop() || 'default';
+                        emitDrawing({
+                            startX: lastEmittedPoint.x,
+                            startY: lastEmittedPoint.y,
+                            currentX,
+                            currentY,
+                            color: 'eraser',
+                            lineWidth: lineThickness,
+                            shape: 'eraser',
+                            roomId
+                        });
+                        setLastEmittedPoint(currentPoint);
+                        setLastDrawTime(currentTime);
+                    }
+                }
+            }
         } else if (currentShape === 'pencil') {
             context.lineTo(currentX, currentY);
             context.stroke();
@@ -270,7 +308,13 @@ export const Canvas = ({ height, selectedColor, lineThickness, currentShape, isE
 
     const stopDrawing = (e: MouseEvent<HTMLCanvasElement>) => {
         if (!isDrawing) return;
-        if (currentShape !== 'pencil') {
+
+        const context = canvasRef.current?.getContext('2d');
+        if (context) {
+            context.globalCompositeOperation = 'source-over';
+        }
+
+        if (currentShape !== 'pencil' && !isEraser) {
             const rect = canvasRef.current?.getBoundingClientRect();
             if (rect) {
                 const currentX = e.clientX - rect.left;
@@ -314,7 +358,7 @@ export const Canvas = ({ height, selectedColor, lineThickness, currentShape, isE
                 className="reset-button"
                 type="button"
             >
-                Clear Canvas
+                Clear All
             </button>
         </div>
     );

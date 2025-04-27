@@ -2,7 +2,14 @@ interface CanvasProps {
   height?: number;
 }
 
-type Shape = "pencil" | "line" | "rectangle" | "square" | "circle" | "triangle";
+type Shape =
+  | "pencil"
+  | "line"
+  | "rectangle"
+  | "square"
+  | "circle"
+  | "triangle"
+  | "eraser";
 
 interface ToolbarProps {
   selectedColor: string;

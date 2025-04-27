@@ -45,12 +45,13 @@
 canvas {
   border: 1px solid #ccc;
   background-color: white;
+  border-radius: 8px;
 }
 
 .reset-button {
   position: absolute;
   bottom: 20px;
-  left: 20px;
+  left: 16px;
   padding: 10px 20px;
   background-color: #ff4444;
   color: white;
