@@ -53,3 +53,11 @@
   box-sizing: border-box;
   border-radius: 8px;
 }
+
+input[type="color"] {
+  width: 40px;
+  height: 20px;
+  padding: 0;
+  cursor: pointer;
+  border: none;
+}

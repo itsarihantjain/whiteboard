@@ -14,6 +14,7 @@ export const DrawingBoard = ({ height = 500 }: CanvasProps) => {
     const [startX, setStartX] = useState(0);
     const [startY, setStartY] = useState(0);
     const [snapshotImage, setSnapshotImage] = useState<ImageData | null>(null);
+    const [isEraser, setIsEraser] = useState(false);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -84,12 +85,12 @@ export const DrawingBoard = ({ height = 500 }: CanvasProps) => {
         setStartY(y);
 
         const context = canvasRef.current.getContext('2d');
-        if (context && currentShape !== 'pencil') {
+        if (context && currentShape !== 'pencil' && !isEraser) {
             const imageData = context.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
             setSnapshotImage(imageData);
         }
 
-        if (context && currentShape === 'pencil') {
+        if (context && currentShape === 'pencil' && !isEraser) {
             context.beginPath();
             context.moveTo(x, y);
         }
@@ -107,7 +108,19 @@ export const DrawingBoard = ({ height = 500 }: CanvasProps) => {
         const currentX = e.clientX - rect.left;
         const currentY = e.clientY - rect.top;
 
-        if (currentShape === 'pencil') {
+        if (isEraser) {
+
+            context.clearRect(currentX - lineThickness / 2, currentY - lineThickness / 2, lineThickness, lineThickness);
+            socket.emit('drawing', {
+                startX: currentX,
+                startY: currentY,
+                currentX,
+                currentY,
+                color: 'white',
+                lineThickness,
+                currentShape: 'pencil',
+            });
+        } else if (currentShape === 'pencil') {
             context.lineTo(currentX, currentY);
             context.stroke();
 
@@ -192,7 +205,7 @@ export const DrawingBoard = ({ height = 500 }: CanvasProps) => {
             <div className="toolbar">
                 <div className="toolbar-controls">
                     <div className="toolbar-item">
-                        <label htmlFor="color">Color:</label>
+                        <label htmlFor="color">Color</label>
                         <input
                             type="color"
                             id="color"
@@ -212,7 +225,7 @@ export const DrawingBoard = ({ height = 500 }: CanvasProps) => {
                         />
                     </div>
                     <div className="toolbar-item">
-                        <label htmlFor="shape">Shape:</label>
+                        <label htmlFor="shape">Shape</label>
                         <select
                             id="shape"
                             value={currentShape}
@@ -225,6 +238,12 @@ export const DrawingBoard = ({ height = 500 }: CanvasProps) => {
                             <option value="circle">Circle</option>
                             <option value="triangle">Triangle</option>
                         </select>
+                    </div>
+                    <div className="toolbar-item">
+                        <label htmlFor="shape">{isEraser ? "For Draw" : 'For Erase'}</label>
+                        <button onClick={() => setIsEraser(!isEraser)} className="eraser-button">
+                            {isEraser ? `Switch to ${currentShape}` : 'Switch to Eraser'}
+                        </button>
                     </div>
                 </div>
 
